@@ -29,17 +29,28 @@ function birthToUtcDate(birthdate, birthTime, lng) {
 
 async function geocodeLocation(locationString) {
   if (!locationString?.trim()) return null
-  try {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationString.trim())}&count=1&language=en&format=json`
-    const res = await fetch(url)
-    if (!res.ok) return null
-    const data = await res.json()
-    const first = data?.results?.[0]
-    if (!first) return null
-    return { lat: first.latitude, lng: first.longitude }
-  } catch {
-    return null
+
+  // Try two strategies: full string first, then city-only (first comma-delimited part).
+  // Open-Meteo's geocoding API is a city-name search — it rejects "New York, NY" but
+  // accepts "New York". We still try the full string first so that ambiguous names like
+  // "Paris, TX" can be resolved by the user entering more context.
+  const candidates = [locationString.trim()]
+  const cityOnly = locationString.split(',')[0].trim()
+  if (cityOnly !== locationString.trim()) candidates.push(cityOnly)
+
+  for (const query of candidates) {
+    try {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`
+      const res = await fetch(url)
+      if (!res.ok) continue
+      const data = await res.json()
+      const first = data?.results?.[0]
+      if (first) return { lat: first.latitude, lng: first.longitude }
+    } catch {
+      continue
+    }
   }
+  return null
 }
 
 export function getSunSign(birthdate) {
