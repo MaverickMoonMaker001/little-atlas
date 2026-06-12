@@ -1,21 +1,56 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, Pencil } from 'lucide-react'
-import { children } from '../data/mockData'
+import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
+import Spinner from '../components/Spinner'
 import OverviewTab from './tabs/OverviewTab'
 import PhysicalTab from './tabs/PhysicalTab'
+import ActivitiesTab from './tabs/ActivitiesTab'
 
-const TABS = ['Overview', 'Astrology', 'Physical', 'Activities']
+const TABS = ['Overview', 'Physical', 'Activities']
 
 export default function ChildProfile() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('Overview')
+  const [child, setChild] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  const child = children.find((c) => c.id === id) ?? children[0]
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('children')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle()
 
-  const initials = child.name[0]
+      if (error || !data) {
+        navigate('/home', { replace: true })
+        return
+      }
+      setChild(data)
+      setLoading(false)
+    }
+    load()
+  }, [id, refreshKey])
+
+  function refresh() { setRefreshKey((k) => k + 1) }
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-sm bg-cream-100 min-h-svh flex items-center justify-center">
+        <Spinner />
+      </div>
+    )
+  }
+
+  const initials = child.name[0].toUpperCase()
+  const age = child.birthdate
+    ? Math.floor((Date.now() - new Date(child.birthdate)) / (365.25 * 24 * 3600 * 1000))
+    : null
 
   return (
     <div className="w-full max-w-sm bg-cream-100 min-h-svh flex flex-col pb-16">
@@ -24,7 +59,10 @@ export default function ChildProfile() {
         <button onClick={() => navigate('/home')} className="p-1 -ml-1 text-atlas-dark">
           <ChevronLeft size={24} strokeWidth={1.5} />
         </button>
-        <button className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-cream-400 text-sm font-medium text-atlas-dark bg-white">
+        <button
+          onClick={() => navigate(`/child/${id}/edit`)}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-cream-400 text-sm font-medium text-atlas-dark bg-white"
+        >
           <Pencil size={13} strokeWidth={1.5} />
           Edit Profile
         </button>
@@ -32,15 +70,20 @@ export default function ChildProfile() {
 
       {/* Child identity */}
       <div className="flex items-center gap-4 px-5 pb-4">
-        <div className="w-14 h-14 rounded-full bg-cream-300 flex items-center justify-center shrink-0">
-          <span className="font-serif text-xl font-medium text-atlas-warm">{initials}</span>
+        <div className="w-14 h-14 rounded-full bg-cream-300 flex items-center justify-center shrink-0 overflow-hidden">
+          {child.photo_url ? (
+            <img src={child.photo_url} alt={child.name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="font-serif text-xl font-medium text-atlas-warm">{initials}</span>
+          )}
         </div>
         <div>
           <h2 className="font-serif text-2xl font-medium text-[#1C1917] leading-tight">
             {child.name}
           </h2>
           <p className="text-sm text-atlas-muted">
-            {child.age} years old · {child.birthdate}
+            {age !== null ? `${age} years old` : 'Age unknown'}
+            {child.birthdate ? ` · ${child.birthdate}` : ''}
           </p>
         </div>
       </div>
@@ -62,30 +105,22 @@ export default function ChildProfile() {
         ))}
       </div>
 
-      {/* Divider */}
       <div className="h-px bg-cream-300 mx-5" />
 
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === 'Overview' && <OverviewTab child={child} />}
-        {activeTab === 'Physical' && <PhysicalTab child={child} />}
-        {(activeTab === 'Astrology' || activeTab === 'Activities') && (
-          <ComingSoon tab={activeTab} />
+        {activeTab === 'Overview' && (
+          <OverviewTab child={child} onDataChanged={refresh} />
+        )}
+        {activeTab === 'Physical' && (
+          <PhysicalTab childId={child.id} refreshKey={refreshKey} onDataChanged={refresh} />
+        )}
+        {activeTab === 'Activities' && (
+          <ActivitiesTab childId={child.id} refreshKey={refreshKey} onDataChanged={refresh} />
         )}
       </div>
 
       <BottomNav />
-    </div>
-  )
-}
-
-function ComingSoon({ tab }) {
-  return (
-    <div className="flex flex-col items-center justify-center px-8 py-20 text-center">
-      <p className="font-serif text-lg text-atlas-warm mb-2">{tab}</p>
-      <p className="text-sm text-atlas-muted">
-        This section will be wired up with real data in bolt.new.
-      </p>
     </div>
   )
 }

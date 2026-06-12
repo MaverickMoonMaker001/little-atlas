@@ -35,14 +35,14 @@ export default function Splash() {
 
         {/* CTA */}
         <button
-          onClick={() => navigate('/add-child')}
+          onClick={() => navigate('/signup')}
           className="w-full bg-atlas-dark text-white rounded-2xl py-4 font-medium text-base tracking-wide mb-4 active:opacity-90 transition-opacity"
         >
           Get Started
         </button>
 
         <button
-          onClick={() => navigate('/home')}
+          onClick={() => navigate('/login')}
           className="text-sm text-atlas-warm hover:text-atlas-dark transition-colors"
         >
           I already have an account
