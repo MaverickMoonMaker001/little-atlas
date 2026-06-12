@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronUp, Clock, Globe, User, Phone } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Spinner from '../../components/Spinner'
 import AddActivityModal from '../../components/modals/AddActivityModal'
@@ -94,6 +94,9 @@ export default function ActivitiesTab({ childId, refreshKey, onDataChanged }) {
                         {act.category}
                       </span>
                       <span className="text-xs text-atlas-muted">{formatDate(act.activity_date)}</span>
+                      {act.hours_estimate != null && (
+                        <span className="text-xs text-atlas-muted">{act.hours_estimate}h/session</span>
+                      )}
                     </div>
                   </div>
                   {isOpen
@@ -103,15 +106,53 @@ export default function ActivitiesTab({ childId, refreshKey, onDataChanged }) {
                 </button>
 
                 {isOpen && (
-                  <div className="px-4 pb-3 border-t border-cream-200 pt-3">
-                    {act.notes ? (
-                      <p className="text-xs text-atlas-warm leading-relaxed mb-3">{act.notes}</p>
-                    ) : (
-                      <p className="text-xs text-atlas-muted mb-3">No notes.</p>
+                  <div className="px-4 pb-3 border-t border-cream-200 pt-3 space-y-2">
+                    {act.notes && (
+                      <p className="text-xs text-atlas-warm leading-relaxed">{act.notes}</p>
                     )}
+
+                    {(act.poc_name || act.poc_phone) && (
+                      <div className="flex items-center gap-3">
+                        {act.poc_name && (
+                          <span className="flex items-center gap-1 text-xs text-atlas-muted">
+                            <User size={11} strokeWidth={1.5} />
+                            {act.poc_name}
+                          </span>
+                        )}
+                        {act.poc_phone && (
+                          <a
+                            href={`tel:${act.poc_phone}`}
+                            className="flex items-center gap-1 text-xs text-atlas-dark"
+                          >
+                            <Phone size={11} strokeWidth={1.5} />
+                            {act.poc_phone}
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {act.website && (
+                      <a
+                        href={act.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-atlas-dark underline underline-offset-2"
+                      >
+                        <Globe size={11} strokeWidth={1.5} />
+                        {act.website.replace(/^https?:\/\//, '')}
+                      </a>
+                    )}
+
+                    {act.hours_estimate != null && (
+                      <span className="flex items-center gap-1 text-xs text-atlas-muted">
+                        <Clock size={11} strokeWidth={1.5} />
+                        {act.hours_estimate} hr{act.hours_estimate !== 1 ? 's' : ''} per session (est.)
+                      </span>
+                    )}
+
                     <button
                       onClick={() => handleDelete(act.id)}
-                      className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 transition-colors"
+                      className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 transition-colors pt-1"
                     >
                       <Trash2 size={12} strokeWidth={1.5} />
                       Delete

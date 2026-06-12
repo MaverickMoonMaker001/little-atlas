@@ -2,6 +2,29 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import Modal from '../Modal'
 import Spinner from '../Spinner'
+import { SHIRT_SIZES, PANTS_SIZES, DRESS_SIZES, SHOE_SIZES } from '../../data/sizeOptions'
+
+function SizeSelect({ label, value, onChange, groups, placeholder }) {
+  return (
+    <div>
+      <label className="block text-xs text-atlas-muted mb-1">{label}</label>
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] focus:outline-none focus:border-atlas-dark appearance-none"
+      >
+        <option value="">{placeholder}</option>
+        {groups.map(({ group, options }) => (
+          <optgroup key={group} label={group}>
+            {options.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+  )
+}
 
 export default function AddSizeModal({ childId, gender, onClose, onSaved }) {
   const isFemale = gender === 'Female'
@@ -12,7 +35,7 @@ export default function AddSizeModal({ childId, gender, onClose, onSaved }) {
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
-  const hasAny = form.shirtSize.trim() || form.pantsSize.trim() || form.shoeSize.trim() || (isFemale && form.dressSize.trim())
+  const hasAny = form.shirtSize || form.pantsSize || form.shoeSize || (isFemale && form.dressSize)
 
   async function handleSave() {
     setError('')
@@ -20,10 +43,10 @@ export default function AddSizeModal({ childId, gender, onClose, onSaved }) {
     try {
       const { error: err } = await supabase.from('size_history').insert({
         child_id: childId,
-        shirt_size: form.shirtSize.trim() || null,
-        pants_size: form.pantsSize.trim() || null,
-        dress_size: isFemale ? (form.dressSize.trim() || null) : null,
-        shoe_size: form.shoeSize.trim() || null,
+        shirt_size: form.shirtSize || null,
+        pants_size: form.pantsSize || null,
+        dress_size: isFemale ? (form.dressSize || null) : null,
+        shoe_size: form.shoeSize || null,
         notes: form.notes.trim() || null,
         recorded_at: form.recordedAt,
       })
@@ -41,44 +64,12 @@ export default function AddSizeModal({ childId, gender, onClose, onSaved }) {
     <Modal title="Add size update" onClose={onClose}>
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-atlas-muted mb-1">Shirt size</label>
-            <input
-              value={form.shirtSize}
-              onChange={set('shirtSize')}
-              placeholder="e.g. Youth XL"
-              className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-atlas-muted mb-1">Pants size</label>
-            <input
-              value={form.pantsSize}
-              onChange={set('pantsSize')}
-              placeholder="e.g. 10 Slim"
-              className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
-            />
-          </div>
+          <SizeSelect label="Shirt size"  value={form.shirtSize} onChange={set('shirtSize')} groups={SHIRT_SIZES} placeholder="Select…" />
+          <SizeSelect label="Pants size"  value={form.pantsSize} onChange={set('pantsSize')} groups={PANTS_SIZES} placeholder="Select…" />
           {isFemale && (
-            <div>
-              <label className="block text-xs text-atlas-muted mb-1">Dress size</label>
-              <input
-                value={form.dressSize}
-                onChange={set('dressSize')}
-                placeholder="e.g. Girls 8"
-                className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
-              />
-            </div>
+            <SizeSelect label="Dress size" value={form.dressSize} onChange={set('dressSize')} groups={DRESS_SIZES} placeholder="Select…" />
           )}
-          <div>
-            <label className="block text-xs text-atlas-muted mb-1">Shoe size</label>
-            <input
-              value={form.shoeSize}
-              onChange={set('shoeSize')}
-              placeholder="e.g. Women's 7"
-              className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
-            />
-          </div>
+          <SizeSelect label="Shoe size"   value={form.shoeSize}  onChange={set('shoeSize')}  groups={SHOE_SIZES}  placeholder="Select…" />
         </div>
 
         <div>

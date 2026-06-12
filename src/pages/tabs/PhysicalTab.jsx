@@ -2,9 +2,32 @@ import { useState, useEffect } from 'react'
 import { Plus, Ruler, Footprints, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Spinner from '../../components/Spinner'
+import { SHIRT_SIZES, PANTS_SIZES, DRESS_SIZES, SHOE_SIZES } from '../../data/sizeOptions'
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function SizeSelect({ label, value, onChange, groups }) {
+  return (
+    <div>
+      <label className="block text-xs text-atlas-muted mb-1">{label}</label>
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] focus:outline-none focus:border-atlas-dark appearance-none"
+      >
+        <option value="">Select…</option>
+        {groups.map(({ group, options }) => (
+          <optgroup key={group} label={group}>
+            {options.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+  )
 }
 
 export default function PhysicalTab({ childId, gender, refreshKey, onDataChanged }) {
@@ -36,18 +59,18 @@ export default function PhysicalTab({ childId, gender, refreshKey, onDataChanged
 
   async function handleSave() {
     setError('')
-    if (!newEntry.shirtSize.trim() && !newEntry.pantsSize.trim() && !newEntry.shoeSize.trim() && !(isFemale && newEntry.dressSize.trim())) {
-      setError('Enter at least one size.')
+    if (!newEntry.shirtSize && !newEntry.pantsSize && !newEntry.shoeSize && !(isFemale && newEntry.dressSize)) {
+      setError('Select at least one size.')
       return
     }
     setSaving(true)
     try {
       const { error: err } = await supabase.from('size_history').insert({
         child_id: childId,
-        shirt_size: newEntry.shirtSize.trim() || null,
-        pants_size: newEntry.pantsSize.trim() || null,
-        dress_size: isFemale ? (newEntry.dressSize.trim() || null) : null,
-        shoe_size: newEntry.shoeSize.trim() || null,
+        shirt_size: newEntry.shirtSize || null,
+        pants_size: newEntry.pantsSize || null,
+        dress_size: isFemale ? (newEntry.dressSize || null) : null,
+        shoe_size: newEntry.shoeSize || null,
         notes: newEntry.notes.trim() || null,
         recorded_at: newEntry.date,
       })
@@ -132,44 +155,12 @@ export default function PhysicalTab({ childId, gender, refreshKey, onDataChanged
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-cream-200 space-y-3">
           <p className="text-sm font-medium text-[#1C1917]">Add size update</p>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-atlas-muted mb-1">Shirt size</label>
-              <input
-                value={newEntry.shirtSize}
-                onChange={set('shirtSize')}
-                placeholder="e.g. Youth XL"
-                className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-atlas-muted mb-1">Pants size</label>
-              <input
-                value={newEntry.pantsSize}
-                onChange={set('pantsSize')}
-                placeholder="e.g. 10 Slim"
-                className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
-              />
-            </div>
+            <SizeSelect label="Shirt size"  value={newEntry.shirtSize} onChange={set('shirtSize')} groups={SHIRT_SIZES} />
+            <SizeSelect label="Pants size"  value={newEntry.pantsSize} onChange={set('pantsSize')} groups={PANTS_SIZES} />
             {isFemale && (
-              <div>
-                <label className="block text-xs text-atlas-muted mb-1">Dress size</label>
-                <input
-                  value={newEntry.dressSize}
-                  onChange={set('dressSize')}
-                  placeholder="e.g. Girls 8"
-                  className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
-                />
-              </div>
+              <SizeSelect label="Dress size" value={newEntry.dressSize} onChange={set('dressSize')} groups={DRESS_SIZES} />
             )}
-            <div>
-              <label className="block text-xs text-atlas-muted mb-1">Shoe size</label>
-              <input
-                value={newEntry.shoeSize}
-                onChange={set('shoeSize')}
-                placeholder="e.g. Women's 7"
-                className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
-              />
-            </div>
+            <SizeSelect label="Shoe size"   value={newEntry.shoeSize}  onChange={set('shoeSize')}  groups={SHOE_SIZES} />
           </div>
           <div>
             <label className="block text-xs text-atlas-muted mb-1">Date</label>
