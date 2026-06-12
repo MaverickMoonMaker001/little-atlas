@@ -8,4 +8,9 @@ export default defineConfig({
     port: parseInt(process.env.PORT || '5174'),
     strictPort: true,
   },
+  build: {
+    rollupOptions: {
+      external: ['@supabase/supabase-js'],
+    },
+  },
 })
