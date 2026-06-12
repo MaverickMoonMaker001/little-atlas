@@ -50,6 +50,7 @@ export default function Settings() {
   const [frequency, setFrequency] = useState('Monthly')
   const [profileLoaded, setProfileLoaded] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [exportDone, setExportDone] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
 
   // Load profile preferences
@@ -102,11 +103,13 @@ export default function Settings() {
 
   async function handleExport() {
     setExporting(true)
+    setExportDone(false)
     try {
-      const [childrenRes, sizesRes, activitiesRes] = await Promise.all([
+      const [childrenRes, sizesRes, activitiesRes, notesRes] = await Promise.all([
         supabase.from('children').select('*'),
         supabase.from('size_history').select('*, children(name)'),
         supabase.from('activities').select('*, children(name)'),
+        supabase.from('child_notes').select('*, children(name)'),
       ])
 
       if (childrenRes.data?.length) {
@@ -138,6 +141,17 @@ export default function Settings() {
           notes: a.notes,
         })))
       }
+
+      if (notesRes.data?.length) {
+        downloadCsv('notes.csv', notesRes.data.map((n) => ({
+          child_name: n.children?.name ?? '',
+          content: n.content,
+          created_at: n.created_at,
+        })))
+      }
+
+      setExportDone(true)
+      setTimeout(() => setExportDone(false), 4000)
     } finally {
       setExporting(false)
     }
@@ -237,6 +251,11 @@ export default function Settings() {
               {exporting ? 'Exporting…' : 'Export Child Data'}
             </span>
           </button>
+          {exportDone && (
+            <p className="text-xs text-green-600 text-center mt-1">
+              Exported children, sizes, activities, and notes.
+            </p>
+          )}
         </Section>
       </div>
 

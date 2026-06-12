@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
@@ -9,11 +10,11 @@ export default {
       },
       colors: {
         cream: {
-          50:  '#FDFAF6',
-          100: '#F7F3EE',
-          200: '#EFE8DF',
-          300: '#E4DAD0',
-          400: '#D4C8BC',
+          50:  'var(--cream-50)',
+          100: 'var(--cream-100)',
+          200: 'var(--cream-200)',
+          300: 'var(--cream-300)',
+          400: 'var(--cream-400)',
         },
         atlas: {
           dark:  '#2C3548',

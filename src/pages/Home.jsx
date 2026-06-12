@@ -4,20 +4,21 @@ import { Clock, Sparkles, Settings } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/BottomNav'
 import Spinner from '../components/Spinner'
+import { getInsightForChild } from '../data/insightThemes'
 
-function needsAttentionFlags(latestSize, latestActivity) {
+function formatDate(dateStr) {
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function needsAttentionFlags(latestSize) {
   const flags = []
-  const now = new Date()
-  const sixMonthsAgo = new Date(now)
+  const sixMonthsAgo = new Date()
   sixMonthsAgo.setDate(sixMonthsAgo.getDate() - 180)
-  const thirtyDaysAgo = new Date(now)
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  if (!latestSize || new Date(latestSize.recorded_at) < sixMonthsAgo) {
-    flags.push('Shoe size has not been updated in 6 months')
-  }
-  if (!latestActivity || new Date(latestActivity.activity_date) < thirtyDaysAgo) {
-    flags.push('No activities logged in 30 days')
+  if (!latestSize) {
+    flags.push({ text: 'Shoe size has never been recorded', date: null })
+  } else if (new Date(latestSize.recorded_at) < sixMonthsAgo) {
+    flags.push({ text: 'Shoe size last updated', date: latestSize.recorded_at })
   }
   return flags
 }
@@ -38,24 +39,16 @@ export default function Home() {
 
       const enriched = await Promise.all(
         kids.map(async (child) => {
-          const [{ data: sizes }, { data: acts }] = await Promise.all([
-            supabase
-              .from('size_history')
-              .select('*')
-              .eq('child_id', child.id)
-              .order('recorded_at', { ascending: false })
-              .limit(1),
-            supabase
-              .from('activities')
-              .select('*')
-              .eq('child_id', child.id)
-              .order('activity_date', { ascending: false })
-              .limit(1),
-          ])
+          const { data: sizes } = await supabase
+            .from('size_history')
+            .select('*')
+            .eq('child_id', child.id)
+            .order('recorded_at', { ascending: false })
+            .order('created_at', { ascending: false })
+            .limit(1)
           return {
             ...child,
             latestSize: sizes?.[0] ?? null,
-            latestActivity: acts?.[0] ?? null,
           }
         })
       )
@@ -109,8 +102,9 @@ export default function Home() {
         ) : (
           children.map((child) => {
             const age = getAge(child.birthdate)
-            const flags = needsAttentionFlags(child.latestSize, child.latestActivity)
+            const flags = needsAttentionFlags(child.latestSize)
             const initials = child.name[0].toUpperCase()
+            const insight = child.birthdate ? getInsightForChild(child.birthdate) : null
 
             return (
               <button
@@ -142,21 +136,33 @@ export default function Home() {
                   )}
                 </div>
 
+                {/* Needs attention detail */}
+                {flags.length > 0 && (
+                  <div className="bg-cream-200 rounded-xl px-3 py-2 mb-2">
+                    {flags.map((f, i) => (
+                      <p key={i} className="text-[11px] text-atlas-warm">
+                        {f.text}{f.date ? ` · ${formatDate(f.date)}` : ''}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Weekly theme badge */}
                 <div className="bg-cream-100 rounded-xl p-3">
-                  {child.latestActivity ? (
+                  {insight ? (
                     <>
                       <div className="flex items-center gap-1.5 mb-1">
                         <Sparkles size={12} className="text-atlas-warm" />
-                        <span className="text-[11px] font-medium text-atlas-warm">
-                          Latest: {child.latestActivity.name}
+                        <span className="text-[11px] font-medium text-atlas-warm uppercase tracking-wide">
+                          {insight.sign} · {insight.theme}
                         </span>
                       </div>
-                      <p className="text-xs text-atlas-warm leading-relaxed">
-                        {child.latestActivity.category} · {new Date(child.latestActivity.activity_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      <p className="text-xs text-atlas-warm leading-relaxed line-clamp-2">
+                        {insight.body}
                       </p>
                     </>
                   ) : (
-                    <p className="text-xs text-atlas-muted">No activities logged yet.</p>
+                    <p className="text-xs text-atlas-muted">Add a birthdate to unlock weekly themes.</p>
                   )}
                 </div>
               </button>

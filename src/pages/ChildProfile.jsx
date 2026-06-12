@@ -8,8 +8,9 @@ import OverviewTab from './tabs/OverviewTab'
 import PhysicalTab from './tabs/PhysicalTab'
 import ActivitiesTab from './tabs/ActivitiesTab'
 import NotesTab from './tabs/NotesTab'
+import AstrologyTab from './tabs/AstrologyTab'
 
-const TABS = ['Overview', 'Physical', 'Activities', 'Notes']
+const TABS = ['Overview', 'Astrology', 'Physical', 'Activities', 'Notes']
 
 export default function ChildProfile() {
   const { id } = useParams()
@@ -111,7 +112,10 @@ export default function ChildProfile() {
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto">
         {activeTab === 'Overview' && (
-          <OverviewTab child={child} onDataChanged={refresh} />
+          <OverviewTab child={child} refreshKey={refreshKey} onDataChanged={refresh} />
+        )}
+        {activeTab === 'Astrology' && (
+          <AstrologyTab child={child} />
         )}
         {activeTab === 'Physical' && (
           <PhysicalTab childId={child.id} gender={child.gender} refreshKey={refreshKey} onDataChanged={refresh} />

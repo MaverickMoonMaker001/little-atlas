@@ -29,6 +29,7 @@ export default function ActivitiesTab({ childId, refreshKey, onDataChanged }) {
       .select('*')
       .eq('child_id', childId)
       .order('activity_date', { ascending: false })
+      .order('created_at', { ascending: false })
     setActivities(data ?? [])
     setLoading(false)
   }

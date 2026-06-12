@@ -1,8 +1,28 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BookOpen, Sparkles } from 'lucide-react'
+import { useAuth } from '../store/authStore'
+import Spinner from '../components/Spinner'
 
 export default function Splash() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user) navigate('/home', { replace: true })
+  }, [user, navigate])
+
+  // Still resolving session — avoid flash of splash for logged-in users
+  if (user === undefined) {
+    return (
+      <div className="w-full max-w-sm bg-cream-100 min-h-svh flex items-center justify-center">
+        <Spinner />
+      </div>
+    )
+  }
+
+  // Authenticated — redirect in progress, render nothing
+  if (user) return null
 
   return (
     <div className="w-full max-w-sm bg-cream-100 min-h-svh flex flex-col items-center justify-center px-7">

@@ -33,7 +33,7 @@ const QUICK_ACTIONS = [
   { icon: FileText,  label: 'Add Note',     modal: 'note' },
 ]
 
-export default function OverviewTab({ child, onDataChanged }) {
+export default function OverviewTab({ child, refreshKey, onDataChanged }) {
   const [modal, setModal] = useState(null)
   const [loading, setLoading] = useState(true)
   const [latestSize, setLatestSize] = useState(null)
@@ -54,7 +54,7 @@ export default function OverviewTab({ child, onDataChanged }) {
     setLoading(false)
   }
 
-  useEffect(() => { loadData() }, [child.id])
+  useEffect(() => { loadData() }, [child.id, refreshKey])
 
   function handleSaved() { loadData(); onDataChanged() }
 
@@ -124,6 +124,7 @@ export default function OverviewTab({ child, onDataChanged }) {
           At a glance
         </p>
         <div className="bg-cream-200 rounded-2xl divide-y divide-cream-300 overflow-hidden">
+          {insight && <Row label="Weekly Theme" value={insight.theme} />}
           <Row label="Shirt Size"      value={latestSize?.shirt_size ?? '—'} />
           <Row label="Pants Size"      value={latestSize?.pants_size ?? '—'} />
           {isFemale && <Row label="Dress Size" value={latestSize?.dress_size ?? '—'} />}

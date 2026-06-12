@@ -110,6 +110,7 @@ export default function AddChild() {
             value={form.name}
             onChange={set('name')}
             placeholder="e.g. Anna"
+            maxLength={60}
             className="w-full bg-white rounded-xl border border-cream-300 px-4 py-3 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark transition-colors"
           />
         </div>

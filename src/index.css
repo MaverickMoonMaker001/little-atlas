@@ -25,3 +25,45 @@
     font-family: inherit;
   }
 }
+
+/* ---- Cream color CSS variables (light mode defaults) ---- */
+:root {
+  --cream-50:  #FDFAF6;
+  --cream-100: #F7F3EE;
+  --cream-200: #EFE8DF;
+  --cream-300: #E4DAD0;
+  --cream-400: #D4C8BC;
+}
+
+/* ---- Dark mode (Celestial Theme) ---- */
+.dark {
+  --cream-50:  #1a1918;
+  --cream-100: #1e1c1a;
+  --cream-200: #252321;
+  --cream-300: #302e2b;
+  --cream-400: #3e3b37;
+}
+
+.dark body {
+  background-color: #141312;
+}
+
+/* White card surfaces become dark-elevated in dark mode */
+.dark .bg-white {
+  background-color: #252321;
+}
+
+/* Inputs and selects */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #252321;
+  color: #ede9e4;
+  border-color: #3e3b37;
+}
+
+/* Red accent stays readable on dark backgrounds */
+.dark .bg-red-50 {
+  background-color: #2d1a1a;
+}
+

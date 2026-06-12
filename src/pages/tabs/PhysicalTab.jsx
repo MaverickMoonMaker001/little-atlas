@@ -49,6 +49,7 @@ export default function PhysicalTab({ childId, gender, refreshKey, onDataChanged
       .select('*')
       .eq('child_id', childId)
       .order('recorded_at', { ascending: false })
+      .order('created_at', { ascending: false })
     setSizeHistory(data ?? [])
     setLoading(false)
   }

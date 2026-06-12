@@ -23,7 +23,10 @@ export default function Signup() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+  const set = (key) => (e) => {
+    setError('')
+    setForm((f) => ({ ...f, [key]: e.target.value }))
+  }
 
   async function handleGoogleSignIn() {
     setError('')
