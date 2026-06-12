@@ -7,12 +7,13 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export default function PhysicalTab({ childId, refreshKey, onDataChanged }) {
+export default function PhysicalTab({ childId, gender, refreshKey, onDataChanged }) {
+  const isFemale = gender === 'Female'
   const [sizeHistory, setSizeHistory] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [newEntry, setNewEntry] = useState({
-    clothingSize: '', shoeSize: '', notes: '',
+    shirtSize: '', pantsSize: '', dressSize: '', shoeSize: '', notes: '',
     date: new Date().toISOString().split('T')[0],
   })
   const [saving, setSaving] = useState(false)
@@ -35,7 +36,7 @@ export default function PhysicalTab({ childId, refreshKey, onDataChanged }) {
 
   async function handleSave() {
     setError('')
-    if (!newEntry.clothingSize.trim() && !newEntry.shoeSize.trim()) {
+    if (!newEntry.shirtSize.trim() && !newEntry.pantsSize.trim() && !newEntry.shoeSize.trim() && !(isFemale && newEntry.dressSize.trim())) {
       setError('Enter at least one size.')
       return
     }
@@ -43,14 +44,16 @@ export default function PhysicalTab({ childId, refreshKey, onDataChanged }) {
     try {
       const { error: err } = await supabase.from('size_history').insert({
         child_id: childId,
-        clothing_size: newEntry.clothingSize.trim() || null,
+        shirt_size: newEntry.shirtSize.trim() || null,
+        pants_size: newEntry.pantsSize.trim() || null,
+        dress_size: isFemale ? (newEntry.dressSize.trim() || null) : null,
         shoe_size: newEntry.shoeSize.trim() || null,
         notes: newEntry.notes.trim() || null,
         recorded_at: newEntry.date,
       })
       if (err) throw err
       setShowAddForm(false)
-      setNewEntry({ clothingSize: '', shoeSize: '', notes: '', date: new Date().toISOString().split('T')[0] })
+      setNewEntry({ shirtSize: '', pantsSize: '', dressSize: '', shoeSize: '', notes: '', date: new Date().toISOString().split('T')[0] })
       loadData()
       onDataChanged()
     } catch (err) {
@@ -83,12 +86,32 @@ export default function PhysicalTab({ childId, refreshKey, onDataChanged }) {
           <div className="bg-cream-100 rounded-xl p-4 flex flex-col gap-1">
             <div className="flex items-center gap-1.5 mb-1">
               <Ruler size={13} className="text-atlas-muted" strokeWidth={1.5} />
-              <span className="text-[11px] text-atlas-muted uppercase tracking-wide">Clothing</span>
+              <span className="text-[11px] text-atlas-muted uppercase tracking-wide">Shirt</span>
             </div>
             <span className="font-serif text-2xl font-medium text-[#1C1917]">
-              {latest?.clothing_size ?? '—'}
+              {latest?.shirt_size ?? '—'}
             </span>
           </div>
+          <div className="bg-cream-100 rounded-xl p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Ruler size={13} className="text-atlas-muted" strokeWidth={1.5} />
+              <span className="text-[11px] text-atlas-muted uppercase tracking-wide">Pants</span>
+            </div>
+            <span className="font-serif text-2xl font-medium text-[#1C1917]">
+              {latest?.pants_size ?? '—'}
+            </span>
+          </div>
+          {isFemale && (
+            <div className="bg-cream-100 rounded-xl p-4 flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Ruler size={13} className="text-atlas-muted" strokeWidth={1.5} />
+                <span className="text-[11px] text-atlas-muted uppercase tracking-wide">Dress</span>
+              </div>
+              <span className="font-serif text-2xl font-medium text-[#1C1917]">
+                {latest?.dress_size ?? '—'}
+              </span>
+            </div>
+          )}
           <div className="bg-cream-100 rounded-xl p-4 flex flex-col gap-1">
             <div className="flex items-center gap-1.5 mb-1">
               <Footprints size={13} className="text-atlas-muted" strokeWidth={1.5} />
@@ -110,14 +133,34 @@ export default function PhysicalTab({ childId, refreshKey, onDataChanged }) {
           <p className="text-sm font-medium text-[#1C1917]">Add size update</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-atlas-muted mb-1">Clothing size</label>
+              <label className="block text-xs text-atlas-muted mb-1">Shirt size</label>
               <input
-                value={newEntry.clothingSize}
-                onChange={set('clothingSize')}
+                value={newEntry.shirtSize}
+                onChange={set('shirtSize')}
                 placeholder="e.g. Youth XL"
                 className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
               />
             </div>
+            <div>
+              <label className="block text-xs text-atlas-muted mb-1">Pants size</label>
+              <input
+                value={newEntry.pantsSize}
+                onChange={set('pantsSize')}
+                placeholder="e.g. 10 Slim"
+                className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
+              />
+            </div>
+            {isFemale && (
+              <div>
+                <label className="block text-xs text-atlas-muted mb-1">Dress size</label>
+                <input
+                  value={newEntry.dressSize}
+                  onChange={set('dressSize')}
+                  placeholder="e.g. Girls 8"
+                  className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-xs text-atlas-muted mb-1">Shoe size</label>
               <input
@@ -192,11 +235,21 @@ export default function PhysicalTab({ childId, refreshKey, onDataChanged }) {
                         <Trash2 size={12} strokeWidth={1.5} />
                       </button>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-4">
                       <div>
-                        <span className="text-[10px] text-atlas-muted block">Clothing</span>
-                        <span className="text-sm font-medium text-[#1C1917]">{entry.clothing_size ?? '—'}</span>
+                        <span className="text-[10px] text-atlas-muted block">Shirt</span>
+                        <span className="text-sm font-medium text-[#1C1917]">{entry.shirt_size ?? '—'}</span>
                       </div>
+                      <div>
+                        <span className="text-[10px] text-atlas-muted block">Pants</span>
+                        <span className="text-sm font-medium text-[#1C1917]">{entry.pants_size ?? '—'}</span>
+                      </div>
+                      {isFemale && (
+                        <div>
+                          <span className="text-[10px] text-atlas-muted block">Dress</span>
+                          <span className="text-sm font-medium text-[#1C1917]">{entry.dress_size ?? '—'}</span>
+                        </div>
+                      )}
                       <div>
                         <span className="text-[10px] text-atlas-muted block">Shoe</span>
                         <span className="text-sm font-medium text-[#1C1917]">{entry.shoe_size ?? '—'}</span>

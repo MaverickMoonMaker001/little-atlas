@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Clock, Ruler, Briefcase, KeyRound, FileText, Sparkles, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Clock, Ruler, Briefcase, FileText, Sparkles, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import Spinner from '../../components/Spinner'
 import AddSizeModal from '../../components/modals/AddSizeModal'
 import AddActivityModal from '../../components/modals/AddActivityModal'
-import AddAccountModal from '../../components/modals/AddAccountModal'
 import AddNoteModal from '../../components/modals/AddNoteModal'
 import { getInsightForChild } from '../../data/insightThemes'
 
@@ -20,7 +19,7 @@ function needsAttentionFlags(latestSize, latestActivity) {
   const thirtyDaysAgo = new Date(now)
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   if (!latestSize || new Date(latestSize.recorded_at) < sixMonthsAgo) {
-    flags.push('Shoe size has not been updated in 6 months')
+    flags.push('Sizes have not been updated in 6 months')
   }
   if (!latestActivity || new Date(latestActivity.activity_date) < thirtyDaysAgo) {
     flags.push('No activities logged in 30 days')
@@ -31,7 +30,6 @@ function needsAttentionFlags(latestSize, latestActivity) {
 const QUICK_ACTIONS = [
   { icon: Ruler,     label: 'Add Size',     modal: 'size' },
   { icon: Briefcase, label: 'Log Activity', modal: 'activity' },
-  { icon: KeyRound,  label: 'Add Account',  modal: 'account' },
   { icon: FileText,  label: 'Add Note',     modal: 'note' },
 ]
 
@@ -41,22 +39,18 @@ export default function OverviewTab({ child, onDataChanged }) {
   const [latestSize, setLatestSize] = useState(null)
   const [latestActivity, setLatestActivity] = useState(null)
   const [notes, setNotes] = useState([])
-  const [accounts, setAccounts] = useState([])
   const [showNotes, setShowNotes] = useState(false)
-  const [showAccounts, setShowAccounts] = useState(false)
 
   async function loadData() {
     setLoading(true)
-    const [sizeRes, actRes, notesRes, accsRes] = await Promise.all([
+    const [sizeRes, actRes, notesRes] = await Promise.all([
       supabase.from('size_history').select('*').eq('child_id', child.id).order('recorded_at', { ascending: false }).limit(1),
       supabase.from('activities').select('*').eq('child_id', child.id).order('activity_date', { ascending: false }).limit(1),
       supabase.from('child_notes').select('*').eq('child_id', child.id).order('created_at', { ascending: false }),
-      supabase.from('child_accounts').select('*').eq('child_id', child.id).order('created_at', { ascending: false }),
     ])
     setLatestSize(sizeRes.data?.[0] ?? null)
     setLatestActivity(actRes.data?.[0] ?? null)
     setNotes(notesRes.data ?? [])
-    setAccounts(accsRes.data ?? [])
     setLoading(false)
   }
 
@@ -69,13 +63,9 @@ export default function OverviewTab({ child, onDataChanged }) {
     setNotes((n) => n.filter((x) => x.id !== noteId))
   }
 
-  async function deleteAccount(accountId) {
-    await supabase.from('child_accounts').delete().eq('id', accountId)
-    setAccounts((a) => a.filter((x) => x.id !== accountId))
-  }
-
   const flags = needsAttentionFlags(latestSize, latestActivity)
   const insight = child.birthdate ? getInsightForChild(child.birthdate) : null
+  const isFemale = child.gender === 'Female'
 
   if (loading) {
     return <div className="flex justify-center py-16"><Spinner /></div>
@@ -115,7 +105,7 @@ export default function OverviewTab({ child, onDataChanged }) {
       )}
 
       {/* Quick actions */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {QUICK_ACTIONS.map(({ icon: Icon, label, modal: m }) => (
           <button
             key={label}
@@ -134,7 +124,9 @@ export default function OverviewTab({ child, onDataChanged }) {
           At a glance
         </p>
         <div className="bg-cream-200 rounded-2xl divide-y divide-cream-300 overflow-hidden">
-          <Row label="Clothing Size"   value={latestSize?.clothing_size ?? '—'} />
+          <Row label="Shirt Size"      value={latestSize?.shirt_size ?? '—'} />
+          <Row label="Pants Size"      value={latestSize?.pants_size ?? '—'} />
+          {isFemale && <Row label="Dress Size" value={latestSize?.dress_size ?? '—'} />}
           <Row label="Shoe Size"       value={latestSize?.shoe_size ?? '—'} />
           <Row label="Latest Activity" value={latestActivity?.name ?? '—'} truncate />
 
@@ -167,44 +159,12 @@ export default function OverviewTab({ child, onDataChanged }) {
               </div>
             )}
           </div>
-
-          {/* Accounts expandable row */}
-          <div>
-            <button
-              onClick={() => setShowAccounts((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-3 gap-4"
-            >
-              <span className="text-sm text-atlas-warm shrink-0">Accounts</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-[#1C1917]">{accounts.length}</span>
-                {showAccounts ? <ChevronUp size={14} className="text-atlas-muted" /> : <ChevronDown size={14} className="text-atlas-muted" />}
-              </div>
-            </button>
-            {showAccounts && (
-              <div className="px-4 pb-3 space-y-2">
-                {accounts.length === 0 && <p className="text-xs text-atlas-muted">No accounts yet.</p>}
-                {accounts.map((acc) => (
-                  <div key={acc.id} className="bg-white rounded-xl p-3 flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-[#1C1917]">{acc.platform}</p>
-                      {acc.username && <p className="text-xs text-atlas-muted">{acc.username}</p>}
-                      {acc.password_hint && <p className="text-[10px] text-atlas-muted mt-0.5">Hint: {acc.password_hint}</p>}
-                    </div>
-                    <button onClick={() => deleteAccount(acc.id)} className="shrink-0 text-atlas-muted hover:text-red-400 transition-colors">
-                      <Trash2 size={13} strokeWidth={1.5} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
       {/* Modals */}
-      {modal === 'size'     && <AddSizeModal     childId={child.id} onClose={() => setModal(null)} onSaved={handleSaved} />}
+      {modal === 'size'     && <AddSizeModal     childId={child.id} gender={child.gender} onClose={() => setModal(null)} onSaved={handleSaved} />}
       {modal === 'activity' && <AddActivityModal childId={child.id} onClose={() => setModal(null)} onSaved={handleSaved} />}
-      {modal === 'account'  && <AddAccountModal  childId={child.id} onClose={() => setModal(null)} onSaved={handleSaved} />}
       {modal === 'note'     && <AddNoteModal     childId={child.id} onClose={() => setModal(null)} onSaved={handleSaved} />}
     </div>
   )

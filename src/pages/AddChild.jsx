@@ -9,6 +9,7 @@ export default function AddChild() {
   const fileRef = useRef(null)
   const [form, setForm] = useState({
     name: '',
+    gender: '',
     birthdate: '',
     birthTime: '',
     birthLocation: '',
@@ -51,6 +52,7 @@ export default function AddChild() {
 
       const { error: insertError } = await supabase.from('children').insert({
         name: form.name.trim(),
+        gender: form.gender || null,
         birthdate: form.birthdate || null,
         birth_time: form.birthTime || null,
         birth_location: form.birthLocation.trim() || null,
@@ -110,6 +112,26 @@ export default function AddChild() {
             placeholder="e.g. Anna"
             className="w-full bg-white rounded-xl border border-cream-300 px-4 py-3 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark transition-colors"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-[#1C1917] mb-1.5">Gender</label>
+          <div className="flex gap-2">
+            {['Female', 'Male', 'Other'].map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, gender: f.gender === g ? '' : g }))}
+                className={`flex-1 rounded-xl border py-2.5 text-sm font-medium transition-colors ${
+                  form.gender === g
+                    ? 'bg-atlas-dark text-white border-atlas-dark'
+                    : 'bg-white text-atlas-warm border-cream-300'
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

@@ -3,13 +3,16 @@ import { supabase } from '../../lib/supabase'
 import Modal from '../Modal'
 import Spinner from '../Spinner'
 
-export default function AddSizeModal({ childId, onClose, onSaved }) {
+export default function AddSizeModal({ childId, gender, onClose, onSaved }) {
+  const isFemale = gender === 'Female'
   const today = new Date().toISOString().split('T')[0]
-  const [form, setForm] = useState({ clothingSize: '', shoeSize: '', notes: '', recordedAt: today })
+  const [form, setForm] = useState({ shirtSize: '', pantsSize: '', dressSize: '', shoeSize: '', notes: '', recordedAt: today })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+
+  const hasAny = form.shirtSize.trim() || form.pantsSize.trim() || form.shoeSize.trim() || (isFemale && form.dressSize.trim())
 
   async function handleSave() {
     setError('')
@@ -17,7 +20,9 @@ export default function AddSizeModal({ childId, onClose, onSaved }) {
     try {
       const { error: err } = await supabase.from('size_history').insert({
         child_id: childId,
-        clothing_size: form.clothingSize.trim() || null,
+        shirt_size: form.shirtSize.trim() || null,
+        pants_size: form.pantsSize.trim() || null,
+        dress_size: isFemale ? (form.dressSize.trim() || null) : null,
         shoe_size: form.shoeSize.trim() || null,
         notes: form.notes.trim() || null,
         recorded_at: form.recordedAt,
@@ -37,14 +42,34 @@ export default function AddSizeModal({ childId, onClose, onSaved }) {
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-atlas-muted mb-1">Clothing size</label>
+            <label className="block text-xs text-atlas-muted mb-1">Shirt size</label>
             <input
-              value={form.clothingSize}
-              onChange={set('clothingSize')}
+              value={form.shirtSize}
+              onChange={set('shirtSize')}
               placeholder="e.g. Youth XL"
               className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
             />
           </div>
+          <div>
+            <label className="block text-xs text-atlas-muted mb-1">Pants size</label>
+            <input
+              value={form.pantsSize}
+              onChange={set('pantsSize')}
+              placeholder="e.g. 10 Slim"
+              className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
+            />
+          </div>
+          {isFemale && (
+            <div>
+              <label className="block text-xs text-atlas-muted mb-1">Dress size</label>
+              <input
+                value={form.dressSize}
+                onChange={set('dressSize')}
+                placeholder="e.g. Girls 8"
+                className="w-full bg-cream-100 rounded-xl border border-cream-300 px-3 py-2.5 text-sm text-[#1C1917] placeholder:text-atlas-muted focus:outline-none focus:border-atlas-dark"
+              />
+            </div>
+          )}
           <div>
             <label className="block text-xs text-atlas-muted mb-1">Shoe size</label>
             <input
@@ -87,7 +112,7 @@ export default function AddSizeModal({ childId, onClose, onSaved }) {
           </button>
           <button
             onClick={handleSave}
-            disabled={loading || (!form.clothingSize.trim() && !form.shoeSize.trim())}
+            disabled={loading || !hasAny}
             className="flex-1 bg-atlas-dark disabled:bg-atlas-muted text-white rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2"
           >
             {loading ? <Spinner size="sm" /> : null}

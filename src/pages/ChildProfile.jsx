@@ -7,8 +7,9 @@ import Spinner from '../components/Spinner'
 import OverviewTab from './tabs/OverviewTab'
 import PhysicalTab from './tabs/PhysicalTab'
 import ActivitiesTab from './tabs/ActivitiesTab'
+import NotesTab from './tabs/NotesTab'
 
-const TABS = ['Overview', 'Physical', 'Activities']
+const TABS = ['Overview', 'Physical', 'Activities', 'Notes']
 
 export default function ChildProfile() {
   const { id } = useParams()
@@ -113,10 +114,13 @@ export default function ChildProfile() {
           <OverviewTab child={child} onDataChanged={refresh} />
         )}
         {activeTab === 'Physical' && (
-          <PhysicalTab childId={child.id} refreshKey={refreshKey} onDataChanged={refresh} />
+          <PhysicalTab childId={child.id} gender={child.gender} refreshKey={refreshKey} onDataChanged={refresh} />
         )}
         {activeTab === 'Activities' && (
           <ActivitiesTab childId={child.id} refreshKey={refreshKey} onDataChanged={refresh} />
+        )}
+        {activeTab === 'Notes' && (
+          <NotesTab childId={child.id} refreshKey={refreshKey} onDataChanged={refresh} />
         )}
       </div>
 
